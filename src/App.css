@@ -34,15 +34,114 @@ body {
 }
 
 /* ── App shell ───────────────────────────────────────────────────────────── */
+.shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
 .app {
+  flex: 1;
+  min-width: 0;
+  max-width: 820px;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  max-width: 820px;
-  margin: 0 auto;
-  border-left: 1px solid var(--border);
   border-right: 1px solid var(--border);
 }
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+.sidebar {
+  flex-shrink: 0;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: var(--bg-2);
+  overflow: hidden;
+}
+
+.sidebar-new {
+  flex-shrink: 0;
+  margin: 12px;
+  padding: 8px 12px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  text-align: left;
+}
+
+.sidebar-new:hover {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+
+.sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 12px;
+}
+
+.sidebar-list::-webkit-scrollbar { width: 3px; }
+.sidebar-list::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+
+.sidebar-item {
+  position: relative;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+
+.sidebar-item:hover { background: var(--bg-3); }
+
+.sidebar-item--active {
+  background: var(--bg-3);
+  border-left: 2px solid var(--accent);
+  padding-left: 12px;
+}
+
+.sidebar-item-title {
+  font-size: 0.78rem;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 20px;
+}
+
+.sidebar-item--active .sidebar-item-title { color: var(--text); }
+
+.sidebar-item-date {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-3);
+  margin-top: 3px;
+}
+
+.sidebar-delete {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 2px 5px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.sidebar-item:hover .sidebar-delete { opacity: 1; }
+.sidebar-delete:hover { color: #E07070; }
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
 .header {

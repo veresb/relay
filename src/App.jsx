@@ -124,9 +124,50 @@ function Thinking({ modelId }) {
   )
 }
 
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function Sidebar({ conversations, activeId, onNewChat, onLoad, onDelete }) {
+  const formatDate = (ts) => {
+    const now = new Date()
+    const d = new Date(ts)
+    const yesterday = new Date(now)
+    yesterday.setDate(now.getDate() - 1)
+    if (d.toDateString() === now.toDateString()) return 'today'
+    if (d.toDateString() === yesterday.toDateString()) return 'yesterday'
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  }
+
+  return (
+    <aside className="sidebar">
+      <button className="sidebar-new" onClick={onNewChat}>+ New chat</button>
+      <div className="sidebar-list">
+        {conversations.map(c => (
+          <div
+            key={c.id}
+            className={`sidebar-item${c.id === activeId ? ' sidebar-item--active' : ''}`}
+            onClick={() => onLoad(c)}
+          >
+            <div className="sidebar-item-title">{c.title || 'Untitled'}</div>
+            <div className="sidebar-item-date">{formatDate(c.createdAt)}</div>
+            <button
+              className="sidebar-delete"
+              onClick={e => { e.stopPropagation(); onDelete(c.id) }}
+              title="Delete"
+            >×</button>
+          </div>
+        ))}
+      </div>
+    </aside>
+  )
+}
+
 // ── Main app ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [apiKey, setApiKey]           = useState(() => localStorage.getItem('relay_key') || '')
+  const [conversations, setConversations] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('relay_conversations') ?? '[]') }
+    catch { return [] }
+  })
+  const [activeConversationId, setActiveConversationId] = useState(() => crypto.randomUUID())
   const [messages, setMessages]       = useState([])
   const [input, setInput]             = useState('')
   const [model, setModel]             = useState(DEFAULT_MODEL)
@@ -141,6 +182,20 @@ export default function App() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
+
+  // Persist conversation whenever messages change
+  useEffect(() => {
+    if (messages.length === 0 || !activeConversationId) return
+    const title = messages.find(m => m.role === 'user')?.content.slice(0, 50) ?? 'Untitled'
+    setConversations(prev => {
+      const exists = prev.some(c => c.id === activeConversationId)
+      const updated = exists
+        ? prev.map(c => c.id === activeConversationId ? { ...c, title, messages } : c)
+        : [{ id: activeConversationId, title, createdAt: Date.now(), messages }, ...prev]
+      localStorage.setItem('relay_conversations', JSON.stringify(updated))
+      return updated
+    })
+  }, [messages, activeConversationId])
 
   const handleTextareaInput = (e) => {
     setInput(e.target.value)
@@ -160,6 +215,28 @@ export default function App() {
     localStorage.removeItem('relay_key')
     setApiKey('')
   }
+
+  const handleNewChat = useCallback(() => {
+    setMessages([])
+    setActiveConversationId(crypto.randomUUID())
+  }, [])
+
+  const handleLoadConversation = useCallback((conv) => {
+    setMessages(conv.messages)
+    setActiveConversationId(conv.id)
+  }, [])
+
+  const handleDeleteConversation = useCallback((id) => {
+    setConversations(prev => {
+      const updated = prev.filter(c => c.id !== id)
+      localStorage.setItem('relay_conversations', JSON.stringify(updated))
+      return updated
+    })
+    if (id === activeConversationId) {
+      setMessages([])
+      setActiveConversationId(crypto.randomUUID())
+    }
+  }, [activeConversationId])
 
   // Core API call — accepts an explicit message array and model ID
   const callAPI = useCallback(async (conversation, modelId) => {
@@ -249,100 +326,109 @@ export default function App() {
   if (!apiKey) return <SetupScreen onSave={saveKey} />
 
   return (
-    <div className="app">
-      {/* ── Header ── */}
-      <header className="header">
-        <span className="header-logo">Relay</span>
-        <div className="header-actions">
-          <button
-            className={`header-btn ${showSystem ? 'header-btn--active' : ''}`}
-            onClick={() => setShowSystem(s => !s)}
-            title="System prompt"
-          >
-            SYS
-          </button>
-          <button
-            className="header-btn"
-            onClick={() => { setMessages([]); setInput('') }}
-            title="Clear conversation"
-          >
-            CLEAR
-          </button>
-          <button
-            className="header-btn header-btn--key"
-            onClick={removeKey}
-            title="Change API key"
-          >
-            KEY
-          </button>
-        </div>
-      </header>
+    <div className="shell">
+      <Sidebar
+        conversations={conversations}
+        activeId={activeConversationId}
+        onNewChat={handleNewChat}
+        onLoad={handleLoadConversation}
+        onDelete={handleDeleteConversation}
+      />
+      <div className="app">
+        {/* ── Header ── */}
+        <header className="header">
+          <span className="header-logo">Relay</span>
+          <div className="header-actions">
+            <button
+              className={`header-btn ${showSystem ? 'header-btn--active' : ''}`}
+              onClick={() => setShowSystem(s => !s)}
+              title="System prompt"
+            >
+              SYS
+            </button>
+            <button
+              className="header-btn"
+              onClick={handleNewChat}
+              title="New conversation"
+            >
+              CLEAR
+            </button>
+            <button
+              className="header-btn header-btn--key"
+              onClick={removeKey}
+              title="Change API key"
+            >
+              KEY
+            </button>
+          </div>
+        </header>
 
-      {/* ── System prompt panel ── */}
-      {showSystem && (
-        <div className="system-panel">
-          <textarea
-            className="system-textarea"
-            value={systemPrompt}
-            onChange={e => setSystemPrompt(e.target.value)}
-            placeholder="System prompt (applies to all models in this conversation)…"
-            rows={3}
-          />
-        </div>
-      )}
-
-      {/* ── Thread ── */}
-      <main className="thread">
-        {messages.length === 0 && !loading && (
-          <div className="thread-empty">
-            <span>Type a message, pick a model, then route responses anywhere.</span>
+        {/* ── System prompt panel ── */}
+        {showSystem && (
+          <div className="system-panel">
+            <textarea
+              className="system-textarea"
+              value={systemPrompt}
+              onChange={e => setSystemPrompt(e.target.value)}
+              placeholder="System prompt (applies to all models in this conversation)…"
+              rows={3}
+            />
           </div>
         )}
 
-        {messages.map((msg, i) => (
-          <Message
-            key={i}
-            msg={msg}
-            isLast={i === messages.length - 1}
-            loading={loading}
-            onRoute={handleRoute}
-          />
-        ))}
+        {/* ── Thread ── */}
+        <main className="thread">
+          {messages.length === 0 && !loading && (
+            <div className="thread-empty">
+              <span>Type a message, pick a model, then route responses anywhere.</span>
+            </div>
+          )}
 
-        {loading && <Thinking modelId={loadingModel} />}
-        <div ref={bottomRef} />
-      </main>
+          {messages.map((msg, i) => (
+            <Message
+              key={i}
+              msg={msg}
+              isLast={i === messages.length - 1}
+              loading={loading}
+              onRoute={handleRoute}
+            />
+          ))}
 
-      {/* ── Input bar ── */}
-      <div className="input-area">
-        <div className="input-bar">
-          <select
-            className="model-select"
-            value={model}
-            onChange={e => setModel(e.target.value)}
-            disabled={loading}
-          >
-            {MODELS.map(m => (
-              <option key={m.id} value={m.id}>{m.name}</option>
-            ))}
-          </select>
-          <textarea
-            ref={textareaRef}
-            className="input-textarea"
-            value={input}
-            onChange={handleTextareaInput}
-            onKeyDown={handleKeyDown}
-            placeholder="Message… (Enter to send, Shift+Enter for new line)"
-            rows={1}
-            disabled={loading}
-          />
-          <button
-            className="send-btn"
-            onClick={handleSend}
-            disabled={loading || !input.trim()}
-          >
-            →
-          </button>
+          {loading && <Thinking modelId={loadingModel} />}
+          <div ref={bottomRef} />
+        </main>
+
+        {/* ── Input bar ── */}
+        <div className="input-area">
+          <div className="input-bar">
+            <select
+              className="model-select"
+              value={model}
+              onChange={e => setModel(e.target.value)}
+              disabled={loading}
+            >
+              {MODELS.map(m => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+            <textarea
+              ref={textareaRef}
+              className="input-textarea"
+              value={input}
+              onChange={handleTextareaInput}
+              onKeyDown={handleKeyDown}
+              placeholder="Message… (Enter to send, Shift+Enter for new line)"
+              rows={1}
+              disabled={loading}
+            />
+            <button
+              className="send-btn"
+              onClick={handleSend}
+              disabled={loading || !input.trim()}
+            >
+              →
+            </button>
+          </div>
         </div>
       </div>
     </div>
