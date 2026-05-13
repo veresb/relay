@@ -3,10 +3,10 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 // ── Model registry ──────────────────────────────────────────────────────────
 // Check current IDs at https://openrouter.ai/models
 const MODELS = [
-  { id: 'anthropic/claude-sonnet-4-5',        name: 'Claude Sonnet',   tag: 'CLAUDE',  color: '#C4A472' },
+  { id: 'anthropic/claude-sonnet-4.5',        name: 'Claude Sonnet',   tag: 'CLAUDE',  color: '#C4A472' },
   { id: 'anthropic/claude-opus-4',             name: 'Claude Opus',     tag: 'OPUS',    color: '#C4A472' },
   { id: 'google/gemini-2.5-pro-preview',       name: 'Gemini 2.5 Pro',  tag: 'GEMINI',  color: '#6BA3E0' },
-  { id: 'google/gemini-2.0-flash',             name: 'Gemini Flash',    tag: 'FLASH',   color: '#6BA3E0' },
+  { id: 'google/gemini-2.0-flash-001',          name: 'Gemini Flash',    tag: 'FLASH',   color: '#6BA3E0' },
   { id: 'x-ai/grok-3',                         name: 'Grok 3',          tag: 'GROK',    color: '#E07070' },
   { id: 'x-ai/grok-3-mini',                    name: 'Grok 3 Mini',     tag: 'GROK·M',  color: '#E07070' },
   { id: 'openai/gpt-4o',                       name: 'GPT-4o',          tag: 'GPT-4o',  color: '#7DCF8A' },
