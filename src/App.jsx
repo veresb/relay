@@ -19,6 +19,27 @@ function getModelInfo(id) {
   return MODELS.find(m => m.id === id) ?? { tag: id.split('/')[1] ?? id, color: '#888', name: id }
 }
 
+// ── Conversation sanitizer ────────────────────────────────────────────────────
+function sanitizeForModel(messages, modelId) {
+  let result = messages
+  if (modelId.startsWith('google/')) {
+    result = result.map(m =>
+      m.role === 'assistant'
+        ? { ...m, content: m.content.replace(/^\[[^\]]+\]: /, '') }
+        : m
+    )
+  }
+  // Merge consecutive same-role messages (required by some models)
+  result = result.reduce((acc, msg) => {
+    const prev = acc[acc.length - 1]
+    if (prev && prev.role === msg.role) {
+      return [...acc.slice(0, -1), { ...prev, content: `${prev.content}\n${msg.content}` }]
+    }
+    return [...acc, msg]
+  }, [])
+  return result
+}
+
 // ── Setup screen ─────────────────────────────────────────────────────────────
 function SetupScreen({ onSave }) {
   const [val, setVal] = useState('')
@@ -250,6 +271,7 @@ export default function App() {
       }
       return { role: m.role, content: m.content }
     })
+    const sanitizedMessages = sanitizeForModel(apiMessages, modelId)
     const modelName = getModelInfo(modelId).name
     const identityPrefix = `You are ${modelName}. You are not any other model. Never impersonate or speak as another model. Messages prefixed with [MODEL responded]: are responses from other AI models shown for context — treat them as reference only.`
     const fullSystemPrompt = systemPrompt
@@ -258,7 +280,7 @@ export default function App() {
 
     const payload = {
       model: modelId,
-      messages: [{ role: 'system', content: fullSystemPrompt }, ...apiMessages],
+      messages: [{ role: 'system', content: fullSystemPrompt }, ...sanitizedMessages],
     }
 
     try {
