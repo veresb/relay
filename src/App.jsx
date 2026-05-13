@@ -74,6 +74,14 @@ function Message({ msg, isLast, loading, onRoute }) {
             {info?.tag}
           </span>
         )}
+        {msg.seenBy?.length > 0 && (
+          <div className="seen-by">
+            {msg.seenBy.map(id => {
+              const m = getModelInfo(id)
+              return <span key={id} className="seen-dot" style={{ background: m.color }} title={m.name} />
+            })}
+          </div>
+        )}
       </div>
       <div className="msg-body">{msg.content}</div>
 
@@ -122,7 +130,7 @@ export default function App() {
   const [messages, setMessages]       = useState([])
   const [input, setInput]             = useState('')
   const [model, setModel]             = useState(DEFAULT_MODEL)
-  const [systemPrompt, setSystemPrompt] = useState('')
+  const [systemPrompt, setSystemPrompt] = useState('Be concise and direct. No unnecessary preamble. Respond in the same language the user writes in.')
   const [loading, setLoading]         = useState(false)
   const [loadingModel, setLoadingModel] = useState(null)
   const [showSystem, setShowSystem]   = useState(false)
@@ -158,7 +166,13 @@ export default function App() {
     setLoading(true)
     setLoadingModel(modelId)
 
-    const apiMessages = conversation.map(m => ({ role: m.role, content: m.content }))
+    const apiMessages = conversation.map(m => {
+      if (m.role === 'assistant' && m.model) {
+        const tag = getModelInfo(m.model).tag
+        return { role: 'assistant', content: `[${tag}]: ${m.content}` }
+      }
+      return { role: m.role, content: m.content }
+    })
     const payload = {
       model: modelId,
       messages: systemPrompt
@@ -188,10 +202,17 @@ export default function App() {
       const content = Array.isArray(raw)
         ? raw.filter(b => b.type === 'text').map(b => b.text).join('')
         : (raw ?? '(no content in response)')
-      const reply = { role: 'assistant', content, model: modelId }
-      setMessages(prev => [...prev, reply])
+      const reply = { role: 'assistant', content, model: modelId, seenBy: [modelId] }
+      const convoLen = conversation.length
+      setMessages(prev => [
+        ...prev.slice(0, convoLen).map(m =>
+          m.seenBy?.includes(modelId) ? m : { ...m, seenBy: [...(m.seenBy ?? []), modelId] }
+        ),
+        ...prev.slice(convoLen),
+        reply,
+      ])
     } catch (err) {
-      const reply = { role: 'assistant', content: `⚠ Error: ${err.message}`, model: modelId }
+      const reply = { role: 'assistant', content: `⚠ Error: ${err.message}`, model: modelId, seenBy: [modelId] }
       setMessages(prev => [...prev, reply])
     } finally {
       setLoading(false)
@@ -204,7 +225,7 @@ export default function App() {
     const text = input.trim()
     if (!text || loading) return
 
-    const userMsg = { role: 'user', content: text, model: null }
+    const userMsg = { role: 'user', content: text, model: null, seenBy: [] }
     const next = [...messages, userMsg]
     setMessages(next)
     setInput('')

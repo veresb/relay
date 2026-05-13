@@ -182,6 +182,22 @@ body {
   gap: 8px;
 }
 
+/* Seen-by model dots */
+.seen-by {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 2px;
+}
+
+.seen-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
 /* Model / role tags */
 .tag {
   display: inline-block;
