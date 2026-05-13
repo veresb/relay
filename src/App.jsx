@@ -192,7 +192,7 @@ export default function App() {
   const [messages, setMessages]       = useState([])
   const [input, setInput]             = useState('')
   const [model, setModel]             = useState(DEFAULT_MODEL)
-  const [systemPrompt, setSystemPrompt] = useState('Be concise and direct. No unnecessary preamble. Respond in the same language the user writes in.')
+  const [systemPrompt, setSystemPrompt] = useState('You are [MODEL_NAME], one of several AI models in a multi-model collaboration tool called Relay. The user can prompt you directly or route conversations between models to get diverse perspectives. Your role is to give your honest, independent assessment — not to repeat or validate what other models have said. If you see responses from other models in the conversation (marked with [MODEL responded]:), treat them as peer input: build on them if they\'re correct, respectfully challenge them if you disagree, and fill in gaps they missed. The goal is collective accuracy and quality, not consensus. Be concise and direct. Respond in the same language the user writes in, regardless of other models\' language choices.')
   const [loading, setLoading]         = useState(false)
   const [loadingModel, setLoadingModel] = useState(null)
   const [showSystem, setShowSystem]   = useState(false)
