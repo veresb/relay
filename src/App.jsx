@@ -37,6 +37,10 @@ function sanitizeForModel(messages, modelId) {
     }
     return [...acc, msg]
   }, [])
+  // Gemini requires the first message to be from the user
+  if (modelId.startsWith('google/') && result.length > 0 && result[0].role === 'assistant') {
+    result = [{ role: 'user', content: '(conversation context)' }, ...result]
+  }
   return result
 }
 
@@ -192,7 +196,7 @@ export default function App() {
   const [messages, setMessages]       = useState([])
   const [input, setInput]             = useState('')
   const [model, setModel]             = useState(DEFAULT_MODEL)
-  const [systemPrompt, setSystemPrompt] = useState('You are [MODEL_NAME], one of several AI models in a multi-model collaboration tool called Relay. The user can prompt you directly or route conversations between models to get diverse perspectives. Your role is to give your honest, independent assessment — not to repeat or validate what other models have said. If you see responses from other models in the conversation (marked with [MODEL responded]:), treat them as peer input: build on them if they\'re correct, respectfully challenge them if you disagree, and fill in gaps they missed. The goal is collective accuracy and quality, not consensus. Be concise and direct. Respond in the same language the user writes in, regardless of other models\' language choices.')
+  const [systemPrompt, setSystemPrompt] = useState('')
   const [loading, setLoading]         = useState(false)
   const [loadingModel, setLoadingModel] = useState(null)
   const [showSystem, setShowSystem]   = useState(false)
@@ -273,7 +277,7 @@ export default function App() {
     })
     const sanitizedMessages = sanitizeForModel(apiMessages, modelId)
     const modelName = getModelInfo(modelId).name
-    const identityPrefix = `You are ${modelName}. You are not any other model. Never impersonate or speak as another model. Messages prefixed with [MODEL responded]: are responses from other AI models shown for context — treat them as reference only.`
+    const identityPrefix = `You are ${modelName}, one of several AI models in a multi-model collaboration tool called Relay. The user can prompt you directly or route conversations between models to get diverse perspectives. Your role is to give your honest, independent assessment — not to repeat or validate what other models have said. If you see responses from other models in the conversation (marked with [MODEL responded]:), treat them as peer input: build on them if they're correct, respectfully challenge them if you disagree, and fill in gaps they missed. The goal is collective accuracy and quality, not consensus. Be concise and direct. Respond in the same language the user writes in, regardless of other models' language choices.`
     const fullSystemPrompt = systemPrompt
       ? `${identityPrefix}\n\n${systemPrompt}`
       : identityPrefix
