@@ -250,11 +250,15 @@ export default function App() {
       }
       return { role: m.role, content: m.content }
     })
+    const modelName = getModelInfo(modelId).name
+    const identityPrefix = `You are ${modelName}. You are not any other model. Never impersonate or speak as another model. Messages prefixed with [MODEL responded]: are responses from other AI models shown for context — treat them as reference only.`
+    const fullSystemPrompt = systemPrompt
+      ? `${identityPrefix}\n\n${systemPrompt}`
+      : identityPrefix
+
     const payload = {
       model: modelId,
-      messages: systemPrompt
-        ? [{ role: 'system', content: systemPrompt }, ...apiMessages]
-        : apiMessages,
+      messages: [{ role: 'system', content: fullSystemPrompt }, ...apiMessages],
     }
 
     try {
