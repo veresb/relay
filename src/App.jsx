@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 // ── Model registry ──────────────────────────────────────────────────────────
 // Check current IDs at https://openrouter.ai/models
 const MODELS = [
-  { id: 'anthropic/claude-sonnet-4.5',        name: 'Claude Sonnet',   tag: 'CLAUDE',  color: '#C4A472' },
+  { id: 'anthropic/claude-sonnet-4.6',        name: 'Claude Sonnet',   tag: 'CLAUDE',  color: '#C4A472' },
   { id: 'anthropic/claude-opus-4',             name: 'Claude Opus',     tag: 'OPUS',    color: '#C4A472' },
   { id: 'google/gemini-2.5-pro-preview',       name: 'Gemini 2.5 Pro',  tag: 'GEMINI',  color: '#6BA3E0' },
   { id: 'google/gemini-2.0-flash-001',          name: 'Gemini Flash',    tag: 'FLASH',   color: '#6BA3E0' },
@@ -184,7 +184,10 @@ export default function App() {
         throw new Error(data.error?.message ?? `HTTP ${res.status}`)
       }
 
-      const content = data.choices?.[0]?.message?.content ?? '(no content in response)'
+      const raw = data.choices?.[0]?.message?.content
+      const content = Array.isArray(raw)
+        ? raw.filter(b => b.type === 'text').map(b => b.text).join('')
+        : (raw ?? '(no content in response)')
       const reply = { role: 'assistant', content, model: modelId }
       setMessages(prev => [...prev, reply])
     } catch (err) {
