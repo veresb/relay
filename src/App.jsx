@@ -23,27 +23,33 @@ function getModelInfo(id) {
 
 // ── Conversation sanitizer ────────────────────────────────────────────────────
 function sanitizeForModel(messages, modelId) {
-  let result = messages
+  let msgs = messages.map(m => ({ ...m }));
+
+  // Strip [MODEL responded]: prefixes for Google models
   if (modelId.startsWith('google/')) {
-    result = result.map(m =>
-      m.role === 'assistant'
-        ? { ...m, content: m.content.replace(/^\[[^\]]+\]: /, '') }
-        : m
-    )
+    msgs = msgs.map(m => ({
+      ...m,
+      content: m.content.replace(/^\[.*?responded\]:\s*/i, '')
+    }));
   }
-  // Merge consecutive same-role messages (required by some models)
-  result = result.reduce((acc, msg) => {
-    const prev = acc[acc.length - 1]
-    if (prev && prev.role === msg.role) {
-      return [...acc.slice(0, -1), { ...prev, content: `${prev.content}\n${msg.content}` }]
+
+  // Merge consecutive same-role messages
+  const merged = [];
+  for (const msg of msgs) {
+    const last = merged[merged.length - 1];
+    if (last && last.role === msg.role) {
+      last.content += '\n\n' + msg.content;
+    } else {
+      merged.push({ role: msg.role, content: msg.content });
     }
-    return [...acc, msg]
-  }, [])
-  // Gemini requires the first message to be from the user
-  if (modelId.startsWith('google/') && result.length > 0 && result[0].role === 'assistant') {
-    result = [{ role: 'user', content: '(conversation context)' }, ...result]
   }
-  return result
+
+  // Ensure first message is always user role
+  if (merged.length > 0 && merged[0].role !== 'user') {
+    merged.unshift({ role: 'user', content: '(conversation context)' });
+  }
+
+  return merged;
 }
 
 // ── Setup screen ─────────────────────────────────────────────────────────────
