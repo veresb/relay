@@ -10,6 +10,8 @@ const MODELS = [
   { id: 'x-ai/grok-3',                         name: 'Grok 3',          tag: 'GROK',    color: '#E07070' },
   { id: 'x-ai/grok-3-mini',                    name: 'Grok 3 Mini',     tag: 'GROK·M',  color: '#E07070' },
   { id: 'openai/gpt-4o',                       name: 'GPT-4o',          tag: 'GPT-4o',  color: '#7DCF8A' },
+  { id: 'perplexity/sonar',                    name: 'Sonar',           tag: 'SONAR',   color: '#20B2AA' },
+  { id: 'perplexity/sonar-pro',                name: 'Sonar Pro',       tag: 'SONAR·P', color: '#20B2AA' },
 ]
 
 const DEFAULT_MODEL = MODELS[0].id
@@ -47,6 +49,8 @@ function sanitizeForModel(messages, modelId) {
 // ── Setup screen ─────────────────────────────────────────────────────────────
 function SetupScreen({ onSave }) {
   const [val, setVal] = useState('')
+  const [pplxVal, setPplxVal] = useState('')
+  const submit = () => val.trim() && onSave(val.trim(), pplxVal.trim())
   return (
     <div className="setup">
       <div className="setup-card">
@@ -58,14 +62,24 @@ function SetupScreen({ onSave }) {
             type="password"
             value={val}
             onChange={e => setVal(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && val.trim() && onSave(val.trim())}
+            onKeyDown={e => e.key === 'Enter' && submit()}
             placeholder="sk-or-v1-…"
             autoFocus
           />
         </div>
+        <div className="setup-field">
+          <label>Perplexity API Key (optional)</label>
+          <input
+            type="password"
+            value={pplxVal}
+            onChange={e => setPplxVal(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && submit()}
+            placeholder="pplx-…"
+          />
+        </div>
         <button
           className="setup-btn"
-          onClick={() => val.trim() && onSave(val.trim())}
+          onClick={submit}
           disabled={!val.trim()}
         >
           Connect →
@@ -188,6 +202,7 @@ function Sidebar({ conversations, activeId, onNewChat, onLoad, onDelete }) {
 // ── Main app ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [apiKey, setApiKey]           = useState(() => localStorage.getItem('relay_key') || '')
+  const [perplexityKey, setPerplexityKey] = useState(() => localStorage.getItem('relay_perplexity_key') || '')
   const [conversations, setConversations] = useState(() => {
     try { return JSON.parse(localStorage.getItem('relay_conversations') ?? '[]') }
     catch { return [] }
@@ -231,9 +246,13 @@ export default function App() {
     }
   }
 
-  const saveKey = useCallback((key) => {
+  const saveKey = useCallback((key, pplxKey) => {
     localStorage.setItem('relay_key', key)
     setApiKey(key)
+    if (pplxKey) {
+      localStorage.setItem('relay_perplexity_key', pplxKey)
+      setPerplexityKey(pplxKey)
+    }
   }, [])
 
   const removeKey = () => {
@@ -282,22 +301,29 @@ export default function App() {
       ? `${identityPrefix}\n\n${systemPrompt}`
       : identityPrefix
 
+    const isPerplexity = modelId.startsWith('perplexity/')
+    const endpoint = isPerplexity
+      ? 'https://api.perplexity.ai/chat/completions'
+      : 'https://openrouter.ai/api/v1/chat/completions'
+    const authKey = isPerplexity ? perplexityKey : apiKey
+    const actualModelId = isPerplexity ? modelId.replace('perplexity/', '') : modelId
+
     const payload = {
-      model: modelId,
+      model: actualModelId,
       messages: [{ role: 'system', content: fullSystemPrompt }, ...sanitizedMessages],
     }
 
     try {
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': typeof window !== 'undefined' ? window.location.href : '',
-          'X-Title': 'Relay',
-        },
-        body: JSON.stringify(payload),
-      })
+      const headers = {
+        'Authorization': `Bearer ${authKey}`,
+        'Content-Type': 'application/json',
+      }
+      if (!isPerplexity) {
+        headers['HTTP-Referer'] = typeof window !== 'undefined' ? window.location.href : ''
+        headers['X-Title'] = 'Relay'
+      }
+
+      const res = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(payload) })
 
       const data = await res.json()
 
@@ -306,9 +332,13 @@ export default function App() {
       }
 
       const raw = data.choices?.[0]?.message?.content
-      const content = Array.isArray(raw)
+      const text = Array.isArray(raw)
         ? raw.filter(b => b.type === 'text').map(b => b.text).join('')
         : (raw ?? '(no content in response)')
+      const citations = data.citations
+      const content = citations?.length
+        ? text + '\n\nSources:\n' + citations.map((url, i) => `${i + 1}. ${url}`).join('\n')
+        : text
       const reply = { role: 'assistant', content, model: modelId, seenBy: [modelId] }
       const convoLen = conversation.length
       setMessages(prev => [
@@ -325,7 +355,7 @@ export default function App() {
       setLoading(false)
       setLoadingModel(null)
     }
-  }, [apiKey, systemPrompt])
+  }, [apiKey, perplexityKey, systemPrompt])
 
   // Send a new user message
   const handleSend = useCallback(() => {
