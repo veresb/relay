@@ -49,6 +49,15 @@ function sanitizeForModel(messages, modelId) {
     merged.unshift({ role: 'user', content: '(conversation context)' });
   }
 
+  // Truncate very long messages to avoid provider errors (e.g. routed Perplexity responses)
+  if (!modelId.startsWith('perplexity/')) {
+    for (const msg of merged) {
+      if (msg.content.length > 4000) {
+        msg.content = msg.content.slice(0, 4000) + '... [truncated]';
+      }
+    }
+  }
+
   return merged;
 }
 
@@ -337,7 +346,9 @@ export default function App() {
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error?.message ?? `HTTP ${res.status}`)
+        console.error('API error response:', data)
+        const errorMsg = data.error?.message ?? data.error?.code ?? `HTTP ${res.status}`
+        throw new Error(errorMsg)
       }
 
       const raw = data.choices?.[0]?.message?.content
