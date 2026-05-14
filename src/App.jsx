@@ -118,6 +118,65 @@ function sanitizeForModel(messages, modelId) {
   return merged;
 }
 
+// ── Scene panel ──────────────────────────────────────────────────────────────
+function ScenePanel({ worldContext, setWorldContext, characterSheets, setCharacterSheets }) {
+  const addCharacter = () =>
+    setCharacterSheets(prev => [...prev, { modelId: MODELS[0].id, characterName: '', characterBrief: '' }])
+  const updateSheet = (i, field, value) =>
+    setCharacterSheets(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: value } : s))
+  const deleteSheet = (i) =>
+    setCharacterSheets(prev => prev.filter((_, idx) => idx !== i))
+  const clearScene = () => { setWorldContext(''); setCharacterSheets([]) }
+
+  return (
+    <div className="scene-panel">
+      <div className="scene-section">
+        <label className="scene-label">World / Scene context</label>
+        <textarea
+          className="scene-textarea"
+          value={worldContext}
+          onChange={e => setWorldContext(e.target.value)}
+          placeholder="Describe the world, setting, and rules of engagement…"
+          rows={3}
+        />
+      </div>
+      <div className="scene-section">
+        <label className="scene-label">Character sheets</label>
+        {characterSheets.map((sheet, i) => (
+          <div key={i} className="character-sheet">
+            <div className="character-sheet-row">
+              <select
+                className="character-model-select"
+                value={sheet.modelId}
+                onChange={e => updateSheet(i, 'modelId', e.target.value)}
+              >
+                {MODELS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+              <input
+                type="text"
+                className="character-name-input"
+                value={sheet.characterName}
+                onChange={e => updateSheet(i, 'characterName', e.target.value)}
+                placeholder="Character name"
+              />
+              <button className="character-delete-btn" onClick={() => deleteSheet(i)}>×</button>
+            </div>
+            <textarea
+              className="character-brief-textarea"
+              value={sheet.characterBrief}
+              onChange={e => updateSheet(i, 'characterBrief', e.target.value)}
+              placeholder="Character brief (e.g. You are the forgotten middle son…)"
+              rows={2}
+            />
+          </div>
+        ))}
+        <button className="character-add-btn" onClick={addCharacter}>+ Add Character</button>
+      </div>
+      <button className="scene-clear-btn" onClick={clearScene}>Clear scene</button>
+    </div>
+  )
+}
+
 // ── Setup screen ─────────────────────────────────────────────────────────────
 function SetupScreen({ onSave }) {
   const [val, setVal] = useState('')
@@ -170,10 +229,14 @@ function SetupScreen({ onSave }) {
 }
 
 // ── Message component ─────────────────────────────────────────────────────────
-function Message({ msg, isLast, loading, onRoute, onRegenerate }) {
+function Message({ msg, isLast, loading, onRoute, onRegenerate, characterSheets }) {
   const [routeTarget, setRouteTarget] = useState(DEFAULT_ROUTE)
   const info = msg.model ? getModelInfo(msg.model) : null
   const isUser = msg.role === 'user'
+  const character = !isUser && characterSheets?.find(s => s.modelId === msg.model)
+  const displayTag = character?.characterName
+    ? character.characterName.toUpperCase()
+    : info?.tag
 
   return (
     <div className={`msg ${isUser ? 'msg--user' : 'msg--assistant'}`}>
@@ -182,7 +245,7 @@ function Message({ msg, isLast, loading, onRoute, onRegenerate }) {
           <span className="tag tag--user">YOU</span>
         ) : (
           <span className="tag" style={{ color: info?.color, borderColor: info?.color + '60' }}>
-            {info?.tag}
+            {displayTag}
           </span>
         )}
         {msg.seenBy?.length > 0 && (
@@ -296,6 +359,15 @@ export default function App() {
   const [loading, setLoading]         = useState(false)
   const [loadingModel, setLoadingModel] = useState(null)
   const [showSystem, setShowSystem]   = useState(false)
+  const [showScene, setShowScene]     = useState(false)
+  const [worldContext, setWorldContext] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('relay_scene') ?? '{}').worldContext ?? '' }
+    catch { return '' }
+  })
+  const [characterSheets, setCharacterSheets] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('relay_scene') ?? '{}').characterSheets ?? [] }
+    catch { return [] }
+  })
 
   const textareaRef = useRef(null)
   const bottomRef   = useRef(null)
@@ -317,6 +389,11 @@ export default function App() {
       return updated
     })
   }, [messages, activeConversationId])
+
+  // Persist scene setup
+  useEffect(() => {
+    localStorage.setItem('relay_scene', JSON.stringify({ worldContext, characterSheets }))
+  }, [worldContext, characterSheets])
 
   const handleTextareaInput = (e) => {
     setInput(e.target.value)
@@ -377,7 +454,16 @@ export default function App() {
     })
     const sanitizedMessages = sanitizeForModel(apiMessages, modelId)
     const modelName = getModelInfo(modelId).name
-    const identityPrefix = `You are ${modelName}, one of several AI models collaborating in Relay. The user routes conversations between models to get independent, critical perspectives.
+    const character = characterSheets.find(s => s.modelId === modelId)
+    let identityPrefix
+    if (character) {
+      const sceneCtx = worldContext ? `[SCENE CONTEXT]: ${worldContext}\n\n` : ''
+      identityPrefix = `${sceneCtx}You are ${character.characterName}. ${character.characterBrief}
+
+You are in a conversation routed between multiple characters by the user. Stay in character. Do not break the fourth wall. Do not summarize or repeat what others have said — respond only as your character would in this moment. Respond in the same language the user writes in.`
+    } else {
+      const sceneCtx = worldContext ? `[SCENE CONTEXT]: ${worldContext}\n\n` : ''
+      identityPrefix = `${sceneCtx}You are ${modelName}, one of several AI models collaborating in Relay. The user routes conversations between models to get independent, critical perspectives.
 
 Your job is NOT to summarize or repeat what previous models said. Assume the user has already read those responses.
 
@@ -391,6 +477,7 @@ If you have nothing to challenge or add, say so briefly rather than restating wh
 Do NOT prefix your own responses with your model name or any label.
 Do NOT summarize the conversation.
 Respond in the same language the user writes in, regardless of other models' language choices.`
+    }
     const fullSystemPrompt = systemPrompt
       ? `${identityPrefix}\n\n${systemPrompt}`
       : identityPrefix
@@ -451,7 +538,7 @@ Respond in the same language the user writes in, regardless of other models' lan
       setLoading(false)
       setLoadingModel(null)
     }
-  }, [apiKey, perplexityKey, systemPrompt])
+  }, [apiKey, perplexityKey, systemPrompt, worldContext, characterSheets])
 
   // Send a new user message
   const handleSend = useCallback(() => {
@@ -511,6 +598,13 @@ Respond in the same language the user writes in, regardless of other models' lan
               SYS
             </button>
             <button
+              className={`header-btn ${showScene ? 'header-btn--active' : ''}`}
+              onClick={() => setShowScene(s => !s)}
+              title="Scene / character sheets"
+            >
+              SCENE
+            </button>
+            <button
               className="header-btn"
               onClick={handleNewChat}
               title="New conversation"
@@ -526,6 +620,16 @@ Respond in the same language the user writes in, regardless of other models' lan
             </button>
           </div>
         </header>
+
+        {/* ── Scene panel ── */}
+        {showScene && (
+          <ScenePanel
+            worldContext={worldContext}
+            setWorldContext={setWorldContext}
+            characterSheets={characterSheets}
+            setCharacterSheets={setCharacterSheets}
+          />
+        )}
 
         {/* ── System prompt panel ── */}
         {showSystem && (
@@ -556,6 +660,7 @@ Respond in the same language the user writes in, regardless of other models' lan
               loading={loading}
               onRoute={handleRoute}
               onRegenerate={() => handleRegenerate(msg.model)}
+              characterSheets={characterSheets}
             />
           ))}
 

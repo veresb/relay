@@ -229,6 +229,151 @@ body {
 
 .system-textarea::placeholder { color: var(--text-3); }
 
+/* ── Scene panel ─────────────────────────────────────────────────────────── */
+.scene-panel {
+  flex-shrink: 0;
+  padding: 14px 20px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.scene-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scene-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+
+.scene-textarea {
+  width: 100%;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.6;
+  padding: 10px 14px;
+  resize: none;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.scene-textarea:focus { border-color: var(--accent-dim); color: var(--text); }
+.scene-textarea::placeholder { color: var(--text-3); }
+
+.character-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  margin-bottom: 6px;
+}
+
+.character-sheet-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.character-model-select {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  padding: 3px 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.character-name-input {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  flex: 1;
+  min-width: 0;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.character-name-input:focus { border-color: var(--accent-dim); color: var(--text); }
+.character-name-input::placeholder { color: var(--text-3); }
+
+.character-brief-textarea {
+  width: 100%;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  line-height: 1.5;
+  padding: 6px 8px;
+  resize: none;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.character-brief-textarea:focus { border-color: var(--accent-dim); color: var(--text); }
+.character-brief-textarea::placeholder { color: var(--text-3); }
+
+.character-delete-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 2px 7px;
+  cursor: pointer;
+  border-radius: 2px;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+.character-delete-btn:hover { color: #e07070; border-color: #e07070; }
+
+.character-add-btn {
+  background: none;
+  border: 1px dashed var(--border-2);
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 5px 12px;
+  cursor: pointer;
+  border-radius: 2px;
+  width: 100%;
+  transition: color 0.15s, border-color 0.15s;
+}
+.character-add-btn:hover { color: var(--text-2); border-color: var(--accent-dim); }
+
+.scene-clear-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 2px;
+  align-self: flex-start;
+  transition: color 0.15s, border-color 0.15s;
+}
+.scene-clear-btn:hover { color: #e07070; border-color: #e07070; }
+
 /* ── Thread ──────────────────────────────────────────────────────────────── */
 .thread {
   flex: 1;
