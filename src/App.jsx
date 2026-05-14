@@ -2,17 +2,48 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 
 // ── Model registry ──────────────────────────────────────────────────────────
 // Check current IDs at https://openrouter.ai/models
-const MODELS = [
-  { id: 'anthropic/claude-sonnet-4.6',        name: 'Claude Sonnet',   tag: 'CLAUDE',  color: '#C4A472' },
-  { id: 'anthropic/claude-opus-4',             name: 'Claude Opus',     tag: 'OPUS',    color: '#C4A472' },
-  { id: 'google/gemini-2.5-pro-preview',       name: 'Gemini 2.5 Pro',  tag: 'GEMINI',  color: '#6BA3E0' },
-  { id: 'google/gemini-2.0-flash-001',          name: 'Gemini Flash',    tag: 'FLASH',   color: '#6BA3E0' },
-  { id: 'x-ai/grok-3',                         name: 'Grok 3',          tag: 'GROK',    color: '#E07070' },
-  { id: 'x-ai/grok-3-mini',                    name: 'Grok 3 Mini',     tag: 'GROK·M',  color: '#E07070' },
-  { id: 'openai/gpt-4o',                       name: 'GPT-4o',          tag: 'GPT-4o',  color: '#7DCF8A' },
-  { id: 'perplexity/sonar',                    name: 'Sonar',           tag: 'SONAR',   color: '#20B2AA' },
-  { id: 'perplexity/sonar-pro',                name: 'Sonar Pro',       tag: 'SONAR·P', color: '#20B2AA' },
+const MODEL_GROUPS = [
+  {
+    label: 'FAST',
+    models: [
+      { id: 'google/gemini-2.5-flash',        name: 'Gemini 2.5 Flash',    tag: 'FLASH',   color: '#6BA3E0' },
+      { id: 'google/gemini-3.1-flash-lite',   name: 'Gemini 3.1 Flash Lite', tag: 'G3·L',  color: '#6BA3E0' },
+      { id: 'x-ai/grok-3-mini',               name: 'Grok 3 Mini',         tag: 'GROK·M',  color: '#E07070' },
+      { id: 'deepseek/deepseek-v3',            name: 'DeepSeek V3',         tag: 'DS·V3',   color: '#7ECEC4' },
+      { id: 'x-ai/grok-4.1-fast',             name: 'Grok 4.1 Fast',       tag: 'G4·F',    color: '#E07070' },
+    ]
+  },
+  {
+    label: 'BALANCED',
+    models: [
+      { id: 'anthropic/claude-sonnet-4-6',    name: 'Claude Sonnet',       tag: 'CLAUDE',  color: '#C4A472' },
+      { id: 'google/gemini-2.5-pro',          name: 'Gemini 2.5 Pro',      tag: 'GEMINI',  color: '#6BA3E0' },
+      { id: 'google/gemini-3-flash-preview',  name: 'Gemini 3 Flash',      tag: 'G3·F',    color: '#6BA3E0' },
+      { id: 'openai/gpt-4o',                  name: 'GPT-4o',              tag: 'GPT-4o',  color: '#7DCF8A' },
+      { id: 'x-ai/grok-3',                    name: 'Grok 3',              tag: 'GROK',    color: '#E07070' },
+      { id: 'perplexity/sonar',               name: 'Sonar',               tag: 'SONAR',   color: '#20B2AA' },
+    ]
+  },
+  {
+    label: 'POWERFUL',
+    models: [
+      { id: 'anthropic/claude-opus-4',        name: 'Claude Opus',         tag: 'OPUS',    color: '#C4A472' },
+      { id: 'openai/gpt-4.5',                 name: 'GPT-4.5',             tag: 'GPT-4.5', color: '#7DCF8A' },
+      { id: 'deepseek/deepseek-v4-pro',       name: 'DeepSeek V4 Pro',     tag: 'DS·P',    color: '#7ECEC4' },
+      { id: 'perplexity/sonar-pro',           name: 'Sonar Pro',           tag: 'SONAR·P', color: '#20B2AA' },
+    ]
+  },
+  {
+    label: 'MAXIMUM',
+    models: [
+      { id: 'anthropic/claude-opus-4-7',      name: 'Claude Opus 4.7',     tag: 'OPUS·7',  color: '#C4A472' },
+      { id: 'openai/gpt-5',                   name: 'GPT-5',               tag: 'GPT-5',   color: '#7DCF8A' },
+      { id: 'google/gemini-3-flash-preview',  name: 'Gemini 3 Pro',        tag: 'G3·P',    color: '#6BA3E0' },
+    ]
+  },
 ]
+
+const MODELS = MODEL_GROUPS.flatMap(g => g.models)
 
 const DEFAULT_MODEL = MODELS[0].id
 const DEFAULT_ROUTE = MODELS[2].id
@@ -148,8 +179,12 @@ function Message({ msg, isLast, loading, onRoute, onRegenerate }) {
             onChange={e => setRouteTarget(e.target.value)}
             className="route-select"
           >
-            {MODELS.filter(m => m.id !== msg.model).map(m => (
-              <option key={m.id} value={m.id}>{m.name}</option>
+            {MODEL_GROUPS.map(g => (
+              <optgroup key={g.label} label={g.label}>
+                {g.models.filter(m => m.id !== msg.model).map(m => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </optgroup>
             ))}
           </select>
           <button className="route-btn" onClick={() => onRoute(routeTarget)}>
@@ -496,8 +531,12 @@ export default function App() {
               onChange={e => setModel(e.target.value)}
               disabled={loading}
             >
-              {MODELS.map(m => (
-                <option key={m.id} value={m.id}>{m.name}</option>
+              {MODEL_GROUPS.map(g => (
+                <optgroup key={g.label} label={g.label}>
+                  {g.models.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
             <textarea
