@@ -77,8 +77,8 @@ function getModelInfo(id) {
 function sanitizeForModel(messages, modelId) {
   let msgs = messages.map(m => ({ ...m }));
 
-  // Strip [MODEL responded]: prefixes for Google models
-  if (modelId.startsWith('google/')) {
+  // Strip [MODEL responded]: prefixes for Google and Perplexity models
+  if (modelId.startsWith('google/') || modelId.startsWith('perplexity/')) {
     msgs = msgs.map(m => ({
       ...m,
       content: m.content.replace(/^\[.*?responded\]:\s*/i, '')
@@ -99,6 +99,11 @@ function sanitizeForModel(messages, modelId) {
   // Ensure first message is always user role
   if (merged.length > 0 && merged[0].role !== 'user') {
     merged.unshift({ role: 'user', content: '(conversation context)' });
+  }
+
+  // Perplexity also requires the last message to be from the user
+  if (modelId.startsWith('perplexity/') && merged.length > 0 && merged[merged.length - 1].role === 'assistant') {
+    merged.push({ role: 'user', content: '(please respond based on the above context)' });
   }
 
   // Truncate very long messages to avoid provider errors (e.g. routed Perplexity responses)
