@@ -201,7 +201,9 @@ function Message({ msg, isLast, loading, onRoute, onRegenerate }) {
             {MODEL_GROUPS.map(g => (
               <optgroup key={g.label} label={g.label}>
                 {g.models.filter(m => m.id !== msg.model).map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
+                  <option key={m.id} value={m.id}>
+                    {m.rank ? `#${m.rank} ${m.name}` : m.name}
+                  </option>
                 ))}
               </optgroup>
             ))}
@@ -553,7 +555,9 @@ export default function App() {
               {MODEL_GROUPS.map(g => (
                 <optgroup key={g.label} label={g.label}>
                   {g.models.map(m => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
+                    <option key={m.id} value={m.id}>
+                      {m.rank ? `#${m.rank} ${m.name}` : m.name}
+                    </option>
                   ))}
                 </optgroup>
               ))}
