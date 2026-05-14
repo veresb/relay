@@ -10,6 +10,10 @@ const MODEL_GROUPS = [
     { id: 'openai/gpt-oss-120b:free',               name: 'GPT OSS 120B',         rank: 36,   tag: 'OSS·F',  color: '#7DCF8A' },
     { id: 'poolside/laguna-m.1:free',               name: 'Laguna M.1',           rank: 29,   tag: 'POOL',   color: '#64748B' },
   ]},
+  { label: 'WEB SEARCH', models: [
+    { id: 'perplexity/sonar',                       name: 'Sonar',                rank: null, tag: 'SONAR',  color: '#20B2AA' },
+    { id: 'perplexity/sonar-pro',                   name: 'Sonar Pro',            rank: null, tag: 'SONAR·P',color: '#20B2AA' },
+  ]},
   { label: 'FAST', models: [
     { id: 'tencent/hy3-preview',                    name: 'Hy3 Preview',          rank: 1,    tag: 'HY3',    color: '#FF6B35' },
     { id: 'deepseek/deepseek-v4-flash',             name: 'DeepSeek V4 Flash',    rank: 4,    tag: 'DS·F',   color: '#7ECEC4' },
@@ -46,14 +50,12 @@ const MODEL_GROUPS = [
     { id: 'z-ai/glm-4.7',                           name: 'GLM 4.7',              rank: 38,   tag: 'GLM·4',  color: '#94A3B8' },
     { id: 'openai/gpt-5.4-mini',                    name: 'GPT-5.4 Mini',         rank: 39,   tag: 'G54·M',  color: '#7DCF8A' },
     { id: 'openai/gpt-5.3-codex',                   name: 'GPT-5.3 Codex',        rank: 45,   tag: 'CODEX',  color: '#7DCF8A' },
-    { id: 'perplexity/sonar',                       name: 'Sonar',                rank: null, tag: 'SONAR',  color: '#20B2AA' },
   ]},
   { label: 'POWERFUL', models: [
     { id: 'anthropic/claude-sonnet-4.6',            name: 'Claude Sonnet 4.6',    rank: 3,    tag: 'SONNET', color: '#C4A472' },
     { id: 'google/gemini-3.1-pro-preview',          name: 'Gemini 3.1 Pro',       rank: 21,   tag: 'G31·P',  color: '#6BA3E0' },
     { id: 'openai/gpt-5.4',                         name: 'GPT-5.4',              rank: 24,   tag: 'GPT·4',  color: '#7DCF8A' },
     { id: 'anthropic/claude-sonnet-4.5',            name: 'Claude Sonnet 4.5',    rank: 37,   tag: 'S4·5',   color: '#C4A472' },
-    { id: 'perplexity/sonar-pro',                   name: 'Sonar Pro',            rank: null, tag: 'SONAR·P',color: '#20B2AA' },
   ]},
   { label: 'MAXIMUM', models: [
     { id: 'anthropic/claude-opus-4.7',              name: 'Claude Opus 4.7',      rank: 2,    tag: 'OPUS·7', color: '#C4A472' },
