@@ -104,7 +104,7 @@ function SetupScreen({ onSave }) {
 }
 
 // ── Message component ─────────────────────────────────────────────────────────
-function Message({ msg, isLast, loading, onRoute }) {
+function Message({ msg, isLast, loading, onRoute, onRegenerate }) {
   const [routeTarget, setRouteTarget] = useState(DEFAULT_ROUTE)
   const info = msg.model ? getModelInfo(msg.model) : null
   const isUser = msg.role === 'user'
@@ -145,6 +145,9 @@ function Message({ msg, isLast, loading, onRoute }) {
           </select>
           <button className="route-btn" onClick={() => onRoute(routeTarget)}>
             →
+          </button>
+          <button className="regen-btn" onClick={onRegenerate}>
+            ↺
           </button>
         </div>
       )}
@@ -382,6 +385,14 @@ export default function App() {
     callAPI(messages, targetModel)
   }, [loading, messages, callAPI])
 
+  // Regenerate last assistant message with the same model
+  const handleRegenerate = useCallback((modelId) => {
+    if (loading) return
+    const trimmed = messages.slice(0, -1)
+    setMessages(trimmed)
+    callAPI(trimmed, modelId)
+  }, [loading, messages, callAPI])
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -457,6 +468,7 @@ export default function App() {
               isLast={i === messages.length - 1}
               loading={loading}
               onRoute={handleRoute}
+              onRegenerate={() => handleRegenerate(msg.model)}
             />
           ))}
 

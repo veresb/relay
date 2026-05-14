@@ -377,6 +377,22 @@ body {
   border-color: var(--accent);
 }
 
+.regen-btn {
+  background: none;
+  border: 1px solid var(--border-2);
+  color: var(--text-2);
+  font-size: 0.9rem;
+  padding: 3px 10px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.regen-btn:hover {
+  background: var(--border-2);
+  color: var(--text-1);
+}
+
 /* ── Thinking animation ──────────────────────────────────────────────────── */
 .msg--thinking {
   opacity: 0.7;
